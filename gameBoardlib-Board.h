@@ -192,3 +192,10 @@ std::vector<std::vector<CRGB>> reverseMatrixHorizontally(const std::vector<std::
 
     return reversedMatrix;
 }
+
+CRGB GetRandomColor() {
+    uint8_t red = random(256);
+    uint8_t green = random(256);
+    uint8_t blue = random(256);
+    return CRGB(red, green, blue);
+}

@@ -28,4 +28,19 @@
 //     zig-zag order, the orientation of the matrices in alternate rows
 //     will be rotated 180 degrees (this is normal -- simplifies wiring).
 
+const CRGB emptyColor = CRGB::Black;
+const CRGB whiteColor = CRGB::White;
+const CRGB borderColor = CRGB(255, 255, 255);
+const CRGB tetrisColor1 = CRGB(255, 0, 0);    // Rouge
+const CRGB tetrisColor2 = CRGB(0, 255, 0);    // Vert
+const CRGB tetrisColor3 = CRGB(0, 128, 255);    // Bleu
+const CRGB tetrisColor4 = CRGB(255, 255, 0);  // Jaune
+const CRGB tetrisColor5 = CRGB(255, 0, 255);  // Magenta
+const CRGB tetrisColor6 = CRGB(0, 255, 255);  // Cyan
+const CRGB tetrisColor7 = CRGB(0, 128, 255);
 
+const CRGB titleMenuColor = CRGB(255, 255, 0);
+const CRGB borderMenuColor = CRGB(0, 0, 255);
+const CRGB TextMenuColor = CRGB(255, 255, 255);
+
+const CRGB SnakeBorder = CRGB(255, 255, 255);

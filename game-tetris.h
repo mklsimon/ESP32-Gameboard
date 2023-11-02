@@ -1,17 +1,5 @@
 extern FastLED_NeoMatrix *matrix; // Déclaration de la variable globale
 
-const CRGB emptyColor = CRGB::Black;
-const CRGB whiteColor = CRGB::White;
-const CRGB borderColor = CRGB(255, 255, 255);
-
-CRGB tetrisColor1 = CRGB(255, 0, 0);    // Rouge
-CRGB tetrisColor2 = CRGB(0, 255, 0);    // Vert
-CRGB tetrisColor3 = CRGB(0, 128, 255);    // Bleu
-CRGB tetrisColor4 = CRGB(255, 255, 0);  // Jaune
-CRGB tetrisColor5 = CRGB(255, 0, 255);  // Magenta
-CRGB tetrisColor6 = CRGB(0, 255, 255);  // Cyan
-CRGB tetrisColor7 = CRGB(0, 128, 255);
-
 std::vector<std::vector<CRGB>> tetrisI = {
   {emptyColor, emptyColor, emptyColor, emptyColor},  
   {tetrisColor1, tetrisColor1, tetrisColor1, tetrisColor1},
@@ -66,8 +54,8 @@ private:
   std::vector<int> playerRotate; // Demande de rotation
   std::vector<int> playerScore; // Tableau des scores
   std::vector<int> playerMalus; // Tableau des Malus
-  int loopFall = 500; // Temps en ms minimum d'un loop
-  int loopMove = 50; // Temps en ms minimum d'un loop
+  int loopFall = 500; // Temps en ms minimum d'un loop - mouvement piece
+  int loopMove = 50; // Temps en ms minimum d'un loop - mouvements joueurs
 
 public:
     Tetris(int num) : numPlayers(num) {
@@ -85,7 +73,7 @@ public:
         playerMalus.resize(numPlayers, 1); // Malus - lignes a ajouter
 
         // Distribution des blocs aux joueurs
-        for (int i = 0; i < tetrisBoards.size(); i++) {
+        for (int i = 0; i < numPlayers; i++) {
             nextPieces[i].board=randomPiece();
             if ( numPlayers < 3){
                 tetrisBoards[i].position( i * 16 + 1, 8);
@@ -274,7 +262,7 @@ public:
     // Affichage du score
     void showScore(int x, int y, int score){
         matrix->fillRect(x,y, 16, 7, matrix->Color(0, 0, 0));
-        matrix->setCursor(x, y);
+        matrix->setCursor(x, y + 4);
         matrix->print(String(score));
     }
 
