@@ -257,21 +257,19 @@ boolean loop() {
             return Direction::Up;
         }       
 
-        // Si aucun fruit n'est trouvé dans les directions possibles, conserver la direction actuelle si possible
-        if (std::find(possibleDirections.begin(), possibleDirections.end(), currentDirection) != possibleDirections.end()) {
-            return currentDirection;
-        }
+        // // Si aucun fruit n'est trouvé dans les directions possibles, conserver la direction actuelle si possible
+        // if (std::find(possibleDirections.begin(), possibleDirections.end(), currentDirection) != possibleDirections.end()) {
+        //     return currentDirection;
+        // }
 
-        // Si aucune direction n'est possible, conserver la direction actuelle
+        // Selection random de la direction
         if (!possibleDirections.empty()) {
-            int randomIndex = std::rand() % possibleDirections.size(); // Génère un indice aléatoire
+            // //int randomIndex = std::rand() % possibleDirections.size(); // Génère un indice aléatoire
+            int randomIndex = random(0, possibleDirections.size() - 1);
             return possibleDirections[randomIndex]; // Renvoie l'élément correspondant à cet indice
         }
-        return currentDirection;
-        
+        return currentDirection;        
     }
-
-
 
     Coord FindNearestFruit(Coord currentPos, const std::vector<Coord>& fruits) {
         Coord nearestFruit = fruits[0];

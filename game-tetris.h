@@ -1,9 +1,7 @@
 extern FastLED_NeoMatrix *matrix; // Déclaration de la variable globale
 
 std::vector<std::vector<CRGB>> tetrisI = {
-  {emptyColor, emptyColor, emptyColor, emptyColor},  
-  {tetrisColor1, tetrisColor1, tetrisColor1, tetrisColor1},
-  {emptyColor, emptyColor, emptyColor, emptyColor}
+  {tetrisColor1, tetrisColor1, tetrisColor1, tetrisColor1}
 };
 
 std::vector<std::vector<CRGB>> tetrisL = {
@@ -70,7 +68,7 @@ public:
         playerMove.resize(numPlayers, 0); // Mouvement Gauche
         playerRotate.resize(numPlayers, 0); // Mouvement Gauche
         playerScore.resize(numPlayers, 0); // Score des joeurus
-        playerMalus.resize(numPlayers, 1); // Malus - lignes a ajouter
+        playerMalus.resize(numPlayers, 0); // Malus - lignes a ajouter
 
         // Distribution des blocs aux joueurs
         for (int i = 0; i < numPlayers; i++) {

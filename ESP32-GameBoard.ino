@@ -37,26 +37,28 @@ void setup() {
 }
 
 void loop() {
-  // String result = menu.show("JEUX");
-  // Serial.println(result);
-  // if (result == "TETRIS") runTetris();
-  runSnake();
-
+  String result = menu.show("JEUX");
+  if (result == "TETRIS") runTetris();
+  if (result == "SNAKE") runSnake();
   delay(1000);
+  initMenu();
 }
 
 
 void runSnake(){
-  // menu.clear();
-  // menu.add_item("1");
-  // menu.add_item("2");
-  // menu.add_item("3");
-  // String result = menu.show("Joueurs ?");
-  // bool isRunning = true;
-  // Tetris tetris = Tetris(result.toInt());
-  // 
+  menu.clear();
+  menu.add_item("1");
+  menu.add_item("2");
+  menu.add_item("3");
+  String joueurs = menu.show("Joueurs ?");
+  menu.clear();
+  menu.add_item("1");
+  menu.add_item("2");
+  menu.add_item("3");
+  menu.add_item("4");
+  String fruits = menu.show("fruits ?");
   bool isRunning = true;
-  Snake snake = Snake(4,4,1);
+  Snake snake = Snake(joueurs.toInt(),fruits.toInt(),1);
   snake.setup();
   while (isRunning) {
     isRunning = snake.loop();
@@ -86,6 +88,6 @@ void initMenu(){
       {CRGB(0, 0, 0), CRGB(0, 255, 0), CRGB(0, 0, 0)}
   };
   menu.add_item("TETRIS", iconTetris);
-  menu.add_item("PACMAN", iconTetris);
   menu.add_item("SNAKE", iconTetris);
+  menu.add_item("PACMAN", iconTetris);
 }

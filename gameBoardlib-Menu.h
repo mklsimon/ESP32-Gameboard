@@ -31,9 +31,9 @@ public:
 
             // Dessiner une ligne de soulignement sous le titre
             int underlineY = yOffset + 4; // Ajustez la position verticale de la ligne de soulignement
-            matrix->drawFastHLine(titleX, underlineY, title.length() * 4 - 1 , titleColor);
+            //matrix->drawFastHLine(titleX, underlineY, title.length() * 4 - 1 , titleColor);
 
-            yOffset += 6; // Ajustez l'espacement entre le titre et les éléments
+            yOffset += 4; // Ajustez l'espacement entre le titre et les éléments
         }
         for (auto it = items.begin(); it != items.end(); ++it) {
             const std::string& key = it->first; // Récupérez le nom de la clé
