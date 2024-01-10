@@ -1,12 +1,11 @@
 extern FastLED_NeoMatrix *matrix; // Déclaration de la variable globale
-extern WebControler webController; // Déclaration de la variable globale
+extern BluetoothControllerManager BT; // Déclaration de la variable globale
 
 class MatrixMenu {
 public:
     int currentIndex = 0;
     MatrixMenu() {
-        // Vous pouvez initialiser des éléments ici si nécessaire
-        
+        // Vous pouvez initialiser des éléments ici si nécessaire        
     }
 
     void add_item(const std::string& label, const std::vector<std::vector<CRGB>>& icon = std::vector<std::vector<CRGB>>()) {
@@ -38,7 +37,7 @@ public:
         for (auto it = items.begin(); it != items.end(); ++it) {
             const std::string& key = it->first; // Récupérez le nom de la clé
             const char* keyChar = key.c_str();
-            
+            matrix->fillRect(1, yOffset+1, matrixWidth-2, 5, matrix->Color(64, 64, 64));
             // Affichez le nom de la clé au centre
             matrix->setCursor(5, yOffset+4);
             uint16_t textColor = matrix->Color(TextMenuColor.r, TextMenuColor.g, TextMenuColor.b);
@@ -64,18 +63,18 @@ public:
         matrix->show();
     }
 
-    String show(const std::string& title = "", int currentIndex=0) {
+    String ask(const std::string& title = "", int currentIndex=0) {
         size_t numItems = items.size();
         showItems(currentIndex,title);
         while (true) {
-            if (webController.gotMessages(0)){
-                String command = webController.getMessages(0);
-                if ( command == "down") currentIndex++;
-                else if ( command == "up") currentIndex--;
+            ControllerInfo pad = BT.getControllerStatus(0);
+            if (pad.ONLINE){
+                if ( pad.DOWN ) currentIndex++;
+                else if ( pad.UP ) currentIndex--;
                 if (currentIndex < 0 ) currentIndex = numItems - 1;
-                if (currentIndex > numItems -1  ) currentIndex = 0;
-                if ( command == "Y" || command == "B"|| command == "G" || command == "R") {
-                    int index = 0;
+                if (currentIndex > numItems -1 ) currentIndex = 0;
+                if ( pad.CIRCLE || pad.CROSS || pad.SQUARE || pad.TRIANGLE) {
+                   int index = 0;
                     for (auto it = items.begin(); it != items.end(); ++it) {
                         if ( index == currentIndex ){
                             std::string key = it->first; // Récupérez le nom de la clé
@@ -83,7 +82,7 @@ public:
                             return String(key.c_str());
                         }
                         index++;
-                    }
+                    } 
                 }
                 showItems(currentIndex,title);
                 delay(100);

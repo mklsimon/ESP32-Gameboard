@@ -10,20 +10,12 @@ enum class Direction {
     Alive
 };
 
-// Coordonnées d'un objet
-class Coord {
-public:
-    int x;
-    int y;
-    Coord(int x, int y) : x(x), y(y) {}
-};
-
 class Snake {
 private:
     int numPlayers;    // Le nombre de joueurs
-    int numFruits;     // Le nombre de fruits
-    int usePortal;     // Présence des portals
-    int tempoMove = 1; // Vitesse du jeu
+    int numReal; // Le nombre de joeurs réels
+    int numIAS;     // Le nombre d'IAS
+    int tempoMove = 500; // Vitesse du jeu
     int tempoAnimation = 200; // Vitesse du jeu
     long counterAnimation = millis();
     std::vector<Coord> playerCoords; // Coordonnées des joueurs
@@ -39,11 +31,12 @@ private:
     std::vector<bool> fruitShouldBlink; // Animation des fruits
 
 public:
-    Snake(int numP, int numF, int portal) : numPlayers(numP),numFruits(numF), usePortal(portal) {
+    Snake(int numP, int numF) : numReal(numP),numIAS(numF) {
+        numPlayers = numReal + numIAS;
         colorList = {CRGB(255, 0, 0), CRGB(0, 255, 0), CRGB(0, 0, 255), CRGB(255, 255, 0), CRGB(255, 0, 255)};
         snakeBoard.resize(1,Board(32, 32, emptyColor));
-        snakeFruits.resize(numFruits, Coord(0, 0));
-        fruitShouldBlink.resize(numFruits, false);
+        snakeFruits.resize(numPlayers, Coord(0, 0));
+        fruitShouldBlink.resize(numPlayers, false);
         playerCoords.resize(numPlayers, Coord(0, 0));
         playerColor.resize(numPlayers);
         playerDirection.resize(numPlayers);
@@ -86,7 +79,7 @@ public:
         }
 
         // On genere les fruits et on les pose
-        for (int i = 0; i < numFruits; i++) {
+        for (int i = 0; i < numPlayers; i++) {
             snakeFruits[i] = GetRandomCoord(snakeBoard[0].board);
             matrix->drawPixel(snakeFruits[i].x, snakeFruits[i].y, GetRandomColor());
         }        
@@ -122,19 +115,27 @@ boolean loop() {
             joueursEnVie++;
         }
     }
-
     if ( joueursEnVie == 0 ){
         matrix->clear();
         return false;
     }
-
-
-
+    // On capture les inputs des joueurs
     for (int i = 0; i < numPlayers; i++) {
         // Tempo déplacement snake
         if ( millis() - snakeMove[i] < tempoMove ) continue;
         snakeMove[i] = millis();
-        if ( playerDirection[i] != Direction::Dead ) playerDirection[i] = moveAIPlayer(i);
+        // L'IA joue
+        if ( i >= numPlayers - numIAS ){
+            if ( playerDirection[i] != Direction::Dead ) playerDirection[i] = moveAIPlayer(i);
+        }
+        if (webController.gotMessages(i)){
+            String command = webController.getMessages(i);
+            if ( command == "left") playerDirection[i] = Direction::Left;
+            else if ( command == "right") playerDirection[i] = Direction::Right;
+            else if ( command == "down")  playerDirection[i] = Direction::Down;
+            else if ( command == "up")  playerDirection[i] = Direction::Up;
+        }
+
         // Direction du serpent
         if ( playerDirection[i] == Direction::Right && playerDirection[i] != Direction::Left) {
             playerCoords[i].x++;
@@ -164,7 +165,7 @@ boolean loop() {
             playerCoordHistory[i].push_back(playerCoords[i]);      
         }
         // Collision avec un fruit ?
-        for (int j = 0; j < numFruits; j++) {
+        for (int j = 0; j < numPlayers; j++) {
             if ( playerCoords[i].x == snakeFruits[j].x && playerCoords[i].y == snakeFruits[j].y ){
                 // On se rallonge
                 playerLength[i]+=1;
@@ -192,7 +193,7 @@ boolean loop() {
     // On anime les fruits
     if (millis() - counterAnimation >= tempoAnimation) {
         counterAnimation = millis();
-        for (int j = 0; j < numFruits; j++) {
+        for (int j = 0; j < numPlayers; j++) {
             if (fruitShouldBlink[j]) {
                 matrix->drawPixel(snakeFruits[j].x, snakeFruits[j].y, colorList[j]);
                 fruitShouldBlink[j] = false;

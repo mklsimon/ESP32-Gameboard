@@ -44,58 +44,45 @@ private:
   std::vector<Board> tetrisBoards;   // Un vecteur de Board pour chaque joueur
   std::vector<Board> nextPieces;     // Un vecteur de Board pour les prochaines pièces de chaque joueur
   std::vector<Board> currentPiece;   // Un vecteur de Board pour chaque joueur
-  std::vector<int> playerXPositions;  // Les positions "x" de la pièce actuelle pour chaque joueur
-  std::vector<int> playerYPositions;  // Les positions "y" de la pièce actuelle pour chaque joueur
+  std::vector<int> playerXPositions; // Les positions "x" de la pièce actuelle pour chaque joueur
+  std::vector<int> playerYPositions; // Les positions "y" de la pièce actuelle pour chaque joueur
   std::vector<long> playerFallTime;  // Les timer des joueurs pour chute de piece
   std::vector<long> playerMoveTime;  // Les timer des joueurs pour mouvement
-  std::vector<int> playerMove; // Demande de deplacement
-  std::vector<int> playerRotate; // Demande de rotation
-  std::vector<int> playerScore; // Tableau des scores
-  std::vector<int> playerMalus; // Tableau des Malus
-  int loopFall = 500; // Temps en ms minimum d'un loop - mouvement piece
-  int loopMove = 50; // Temps en ms minimum d'un loop - mouvements joueurs
+  std::vector<int> playerMove;       // Demande de deplacement
+  std::vector<int> playerRotate;     // Demande de rotation
+  std::vector<int> playerScore;      // Tableau des scores
+  std::vector<int> playerMalus;      // Tableau des Malus
+  int loopFall = 500;                // Temps en ms minimum d'un loop - mouvement piece
+  int loopMove = 50;                 // Temps en ms minimum d'un loop - mouvements joueurs
 
 public:
     Tetris(int num) : numPlayers(num) {
         // Initialisation de la classe Tetris avec le nombre de joueurs spécifié
-        tetrisBoards.resize(numPlayers, Board(10, 22, emptyColor)); // Crée un tableau de Boards pour chaque joueur 
+        tetrisBoards.resize(numPlayers, Board(22, 10, tetrisColor5)); // Crée un tableau de Boards pour chaque joueur 
         nextPieces.resize(numPlayers, Board(4, 4, emptyColor));     // Crée un tableau de Boards pour les prochaines pièces de chaque joueur
         currentPiece.resize(numPlayers, Board(4, 4, emptyColor));   // Crée un tableau de Boards pour la piece courrante
-        playerXPositions.resize(numPlayers, 0);  // Initialise les positions "x" pour chaque joueur à zéro
-        playerYPositions.resize(numPlayers, 4);  // Initialise les positions "y"  # Posiiton de la premier brique
-        playerFallTime.resize(numPlayers, millis());  // Temps minimum par loop
-        playerMoveTime.resize(numPlayers, millis());  // Temps minimum par loop
-        playerMove.resize(numPlayers, 0); // Mouvement Gauche
+        playerXPositions.resize(numPlayers, 4);  // Initialise les positions "x" pour chaque joueur à zéro
+        playerYPositions.resize(numPlayers, 0);  // Initialise les positions "y"  # Posiiton de la premier brique
+        playerFallTime.resize(numPlayers, millis());  // Temps minimum par loop - chute
+        playerMoveTime.resize(numPlayers, millis());  // Temps minimum par loop - déplacement
+        playerMove.resize(numPlayers, 0);   // Mouvement Gauche
         playerRotate.resize(numPlayers, 0); // Mouvement Gauche
-        playerScore.resize(numPlayers, 0); // Score des joeurus
-        playerMalus.resize(numPlayers, 0); // Malus - lignes a ajouter
+        playerScore.resize(numPlayers, 0);  // Score des joeurus
+        playerMalus.resize(numPlayers, 0);  // Malus - lignes a ajouter
 
         // Distribution des blocs aux joueurs
         for (int i = 0; i < numPlayers; i++) {
             nextPieces[i].board=randomPiece();
-            if ( numPlayers < 3){
-                tetrisBoards[i].position( i * 16 + 1, 8);
-                matrix->drawLine(tetrisBoards[i].positionX-1, tetrisBoards[i].positionY-1, tetrisBoards[i].positionX-1,tetrisBoards[i].positionY + tetrisBoards[i].gameWidth, matrix->Color(255, 255, 255)); // vertical gauche
-                matrix->drawLine(tetrisBoards[i].positionX-1, tetrisBoards[i].positionY-1, tetrisBoards[i].positionX + tetrisBoards[i].gameHeight, tetrisBoards[i].positionY-1, matrix->Color(255, 255, 255)); // horizontal
-                matrix->drawLine(tetrisBoards[i].positionX-1, tetrisBoards[i].positionY + tetrisBoards[i].gameWidth, tetrisBoards[i].positionX + tetrisBoards[i].gameHeight, tetrisBoards[i].positionY + tetrisBoards[i].gameWidth, matrix->Color(255, 255, 255)); // horizontal
-                matrix->drawLine(tetrisBoards[i].positionX + tetrisBoards[i].gameHeight, tetrisBoards[i].positionY-1, tetrisBoards[i].positionX + tetrisBoards[i].gameHeight, tetrisBoards[i].positionY + tetrisBoards[i].gameWidth, matrix->Color(255, 255, 255)); // vertical
-                nextPieces[i].position( tetrisBoards[i].positionX + tetrisBoards[i].gameHeight + 1 ,tetrisBoards[i].positionY + 1 );
-                showScore(tetrisBoards[i].positionX-1, tetrisBoards[i].positionY - 8 ,playerScore[i]);
-                
-            }else {
-                tetrisBoards[i].position( i * 11, 8);
-                matrix->drawLine(tetrisBoards[i].positionX, tetrisBoards[i].positionY-1, tetrisBoards[i].positionX + tetrisBoards[i].gameHeight, tetrisBoards[i].positionY-1, matrix->Color(255, 255, 255)); // horizontal
-                matrix->drawLine(tetrisBoards[i].positionX, tetrisBoards[i].positionY + tetrisBoards[i].gameWidth, tetrisBoards[i].positionX + tetrisBoards[i].gameHeight, tetrisBoards[i].positionY + tetrisBoards[i].gameWidth, matrix->Color(255, 255, 255)); // horizontal
-                matrix->drawLine(tetrisBoards[i].positionX + tetrisBoards[i].gameHeight, tetrisBoards[i].positionY-1, tetrisBoards[i].positionX + tetrisBoards[i].gameHeight, tetrisBoards[i].positionY + tetrisBoards[i].gameWidth, matrix->Color(255, 255, 255)); // vertical
-                nextPieces[i].position( i * 11 + 5, 2);
-            }
+            tetrisBoards[i].position( 8, 1);
+            tetrisBoards[i].show();
+
+            nextPieces[i].position( 20, 12);
             nextPieces[i].show();
-            currentPiece[i].board=randomPiece();
-            tetrisBoards[i].showTemp(mergeRGBVectors(tetrisBoards[i].board,currentPiece[i].board,playerXPositions[i],playerYPositions[i]));            
+
+            currentPiece[i].board=randomPiece();            
         }
         matrix->show();
         delay(1000);
-
     }    
   
   void setup() {
@@ -106,22 +93,19 @@ public:
   boolean loop() {
     // Traitement des entrées du webControler pour tous les joeurs
     for (int index = 0; index < tetrisBoards.size(); index++) {
-        if (webController.gotMessages(index)){
-            Serial.println("Message en attente !");
-            String command = webController.getMessages(index);
-            if ( command == "left") playerMove[index] = -1;
-            else if ( command == "right") playerMove[index] = 1;
-            // Accélartion de la descente
-            else if ( command == "down") {
+        ControllerInfo pad = BT.getControllerStatus(index);
+        if (pad.ONLINE){
+            if ( pad.LEFT ) playerMove[index] = -1;
+            else if ( pad.RIGHT ) playerMove[index] = 1;
+            if ( pad.DOWN ) {
                 playerMoveTime[index] = 0;
                 playerFallTime[index] = 0;
             }
-            // Rotation - YBGR
-            else if ( command == "Y") playerRotate[index] = 1;
-            else if ( command == "B") playerRotate[index] = -1;
-            else if ( command == "G") playerRotate[index] = 1;
-            else if ( command == "R") playerRotate[index] = -1;
-            else if ( command == "exit") return false;
+            else if ( pad.CIRCLE) playerRotate[index] = 1;
+            else if ( pad.SQUARE) playerRotate[index] = -1;
+            else if ( pad.CROSS ) playerRotate[index] = 1;
+            else if ( pad.TRIANGLE ) playerRotate[index] = -1;
+            else if ( pad.PS3 ) return false;
 
         }
     }
@@ -130,7 +114,6 @@ public:
         // Tempo mouvement de joueurs
         if ( millis() - playerMoveTime[index] < loopMove ) continue;
         playerMoveTime[index] = millis();
-        // mouvements du joueurs
 
         // Rotation gauche / Droite
         if (playerRotate[index] != 0){
@@ -210,7 +193,7 @@ public:
     return true; // Pour continuer le loop
     }
 
-    // Tirer une piece au hasard
+    // // Tirer une piece au hasard
     std::vector<std::vector<CRGB>> randomPiece(){
         int pieceIndex = random(pieces.size());
         std::vector<std::vector<CRGB>> piece = *pieces[pieceIndex];

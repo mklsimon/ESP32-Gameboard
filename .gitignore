@@ -1,1 +1,3 @@
 .vscode
+old/*
+configs/config-matrix.h

@@ -1,3 +1,12 @@
+#include <WiFi.h>
+#include <ESPAsyncWebSrv.h>
+#include <ESPAsyncDNSServer.h>
+#include <AsyncWebSocket.h>
+#include <ArduinoJson.h>
+#include <map>
+AsyncWebSocket ws("/ws");
+
+const char* htmlContent = R"rawliteral(
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -110,7 +119,7 @@
   </style>
 </head>
 <body>
-  <table onload="init()" class="gamepad-table">
+  <table border=0 class="gamepad-table">
     <tr>
         <td></td>
         <td class="arrow arrow-up" onclick="sendControl('up')">↑</td>
@@ -149,10 +158,27 @@
   const ipAddress = window.location.hostname;
   const webSocketURL = `ws://${ipAddress}/ws`;
   const socket = new WebSocket(webSocketURL);
+  function connectWebSocket() {
+    socket.onopen = function (event) {
+      console.log("WebSocket connection established.");
+    };
+    socket.onclose = function (event) {
+      if (event.code === 1006) {
+        // Le code 1006 indique que la connexion a été interrompue de manière anormale.
+        console.log("WebSocket connection closed abnormally. Reconnecting...");
+        setTimeout(() => {
+          connectWebSocket(); // Reconnectez-vous après un court délai
+        }, 2000); // Réessayez la connexion après 2 secondes (ajustez ce délai selon vos besoins)
+      } else {
+        console.log("WebSocket connection closed with code: " + event.code);
+      }
+    };
 
-  socket.onopen = function (event) {
-    console.log("WebSocket connection established.");
-  };
+    socket.onerror = function (event) {
+      console.error("WebSocket error: " + event.message);
+    };
+  }
+  connectWebSocket(); // Démarrez la connexion WebSocket
 
   function sendControl(control) {
     const radioButtons = document.getElementsByName("option");
@@ -168,6 +194,7 @@
         }
     }
   }
+
   function rotateTable() {
     const table = document.querySelector(".gamepad-table");
     if (table.classList.contains("rotate-90")) {
@@ -188,8 +215,85 @@
     }
   }
 
-    document.addEventListener('contextmenu', function(event) {
-        event.preventDefault(); // Empêche l'apparition du menu contextuel
-    });
 </script>
 </html>
+)rawliteral";
+
+
+class WebControler {
+public:
+  WebControler(int port = 80) : webServer(port) {}
+
+  void begin() {
+    // Configurer le point d'accès WiFi pour le portail captif
+    //WiFi.mode(WIFI_AP);
+    //WiFi.softAP("ESPmatrix");
+    // Configurer le serveur DNS asynchrone
+    // dnsServer.start(53, "*", WiFi.softAPIP());
+    
+    const char* ssid = "freebox_GS";     // Remplacez par le nom de votre réseau Wi-Fi
+    const char* password = "mickeyfreeboxgs"; 
+
+    // Connexion au Wi-Fi
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
+      // Attendez que la connexion soit établie
+      delay(1000);
+      Serial.println("Connexion au Wi-Fi en cours...");
+    }
+
+    // Une fois connecté, affichez l'adresse IP
+    Serial.println("Connecté au Wi-Fi");
+    Serial.print("Adresse IP: ");
+    Serial.println(WiFi.localIP());
+
+    // WebServer
+    webServer.on("/", HTTP_GET, std::bind(&WebControler::handleRoot, this, std::placeholders::_1));
+    webServer.onNotFound(std::bind(&WebControler::handleRoot, this, std::placeholders::_1));
+    ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+      String message = String((char*)data);
+      Serial.println("Message received: " + message);
+      handleMessage(message);
+    });
+    webServer.addHandler(&ws); 
+    webServer.begin();
+  }
+
+  void handleMessage(const String& jsonMessage) {
+    DynamicJsonDocument doc(1024); // Créer un document JSON avec une taille maximale de 1024 octets
+    DeserializationError error = deserializeJson(doc, jsonMessage);
+
+    if (error) {
+      Serial.print("Erreur lors de l'analyse JSON: ");
+      Serial.println(error.c_str());
+      return; // Quitter la fonction en cas d'erreur
+    }
+
+    // Si l'analyse JSON est réussie, vous pouvez extraire les données et les stocker dans un dictionnaire (map)
+    String key = doc["player"].as<String>();  // Remplacez "votre_clef" par le nom de la clé JSON que vous voulez utiliser comme clé dans le dictionnaire
+    String value = doc["move"].as<String>(); // Remplacez "votre_champ" par le nom du champ JSON que vous voulez extraire
+    dataMap[key]=value;
+  }
+ 
+  void handleRoot(AsyncWebServerRequest *request) {
+    request->send(200, "text/html", htmlContent);
+  }
+
+  bool gotMessages(int id) {
+    String key = String(id);
+    return !dataMap[key].isEmpty();
+  }
+
+  String getMessages(int id) {
+    String key = String(id);
+    String message = dataMap[key]; // Stocker la valeur associée à la clé
+    dataMap[key].clear(); // Vider la valeur associée à la clé
+    return message; // Retourner la valeur précédemment associée à la clé
+  }
+private:
+  AsyncDNSServer dnsServer;
+  AsyncWebServer webServer;
+  std::map<String, String> dataMap;
+  static WebControler* instance; 
+};

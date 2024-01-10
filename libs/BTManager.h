@@ -2,10 +2,29 @@
 #pragma once
 #include <Bluepad32.h>
 
+int X_THRESHOLD = 200;
+int Y_THRESHOLD = 200;
+
+struct ControllerInfo {
+  bool ONLINE;
+  bool UP;
+  bool DOWN;
+  bool LEFT;
+  bool RIGHT;
+  bool START;
+  bool SELECT;
+  bool PS3;
+  bool CROSS;
+  bool CIRCLE;
+  bool TRIANGLE;
+  bool SQUARE;
+};
+
 class BluetoothControllerManager {
 public:
   BluetoothControllerManager() {
     // Constructeur
+
   }
 
   void initialize() {
@@ -36,25 +55,71 @@ public:
   void updateControllers() {
     BP32.update();
     for (int i = 0; i < BP32_MAX_CONTROLLERS; i++) {
-      ControllerPtr myController = myControllers[i];
+      ControllerPtr gamepad = gamepads[i];
 
-      if (myController && myController->isConnected()) {
-        if (myController->isGamepad())
-          processGamepad(myController);
+      if (gamepad && gamepad->isConnected()) {
+        if (gamepad->isGamepad())
+          processGamepad(gamepad);
       }
     }
   }
+  
+  void updateController(int controllerId) {
+    BP32.update();
+    if (controllerId >= 0 && controllerId < BP32_MAX_CONTROLLERS) {
+      ControllerPtr gamepad = gamepads[controllerId];
+
+      if (gamepad && gamepad->isConnected()) {
+        if (gamepad->isGamepad())
+          processGamepad(gamepad);
+      }
+    } else {
+      Serial.println("Invalid controller ID");
+    }
+  }
+
+  ControllerInfo getControllerStatus(int controllerId) {
+    BP32.update();
+    ControllerInfo controllerInfo = {0}; // Initialisez la structure avec des valeurs par défaut
+
+    if (controllerId >= 0 && controllerId < BP32_MAX_CONTROLLERS) {
+      ControllerPtr gamepad = gamepads[controllerId];
+
+      if (gamepad && gamepad->isConnected() && gamepad->isGamepad()) {
+        controllerInfo.ONLINE = 1;
+        // Stick left
+        controllerInfo.DOWN = gamepad->axisY() > Y_THRESHOLD ;
+        controllerInfo.UP = gamepad->axisY() < -Y_THRESHOLD;
+        controllerInfo.RIGHT = gamepad->axisX() > X_THRESHOLD;
+        controllerInfo.LEFT = gamepad->axisX() < -X_THRESHOLD;
+
+        // Button
+        byte button = gamepad->buttons();
+        controllerInfo.CROSS = (button & 0x0001) == 0x0001;
+        controllerInfo.CIRCLE = (button & 0x0002) == 0x0002;
+        controllerInfo.SQUARE = (button & 0x0004) == 0x0004;
+        controllerInfo.TRIANGLE = (button & 0x0008) == 0x0008;
+
+        // Misc
+        button = gamepad->miscButtons();
+        controllerInfo.PS3 = (button & 0x0001) == 0x0001;
+        controllerInfo.SELECT = (button & 0x0002) == 0x0002;
+        controllerInfo.START = (button & 0x0004) == 0x0004;
+      }
+    }
+    return controllerInfo;
+  }
 
 private:
-  ControllerPtr myControllers[BP32_MAX_CONTROLLERS];
+  ControllerPtr gamepads[BP32_MAX_CONTROLLERS];
 
   void onConnectedController(ControllerPtr ctl) {
     bool foundEmptySlot = false;
     for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
-      if (myControllers[i] == nullptr) {
+      if (gamepads[i] == nullptr) {
         Serial.print("CALLBACK: Controller is connected, index=");
         Serial.println(i);
-        myControllers[i] = ctl;
+        gamepads[i] = ctl;
         foundEmptySlot = true;
         ControllerProperties properties = ctl->getProperties();
         Serial.printf("BTAddr: %02x:%02x:%02x:%02x:%02x:%02x, VID/PID: %04x:%04x, flags: 0x%02x\n",
@@ -68,10 +133,10 @@ private:
 
   void onDisconnectedController(ControllerPtr ctl) {
       for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
-          if (myControllers[i] == ctl) {
+          if (gamepads[i] == ctl) {
               Serial.print("CALLBACK: Controller is disconnected from index=");
               Serial.println(i);
-              myControllers[i] = nullptr;
+              gamepads[i] = nullptr;
               break;
           }
       }

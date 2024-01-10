@@ -2,10 +2,10 @@
 #define LED_PIN 13
 #define MATRIX_WIDTH        16 // largeur de CHAQUE MATRICE NEOPIXEL
 #define MATRIX_HEIGHT       16 // hauteur de chaque matrice
-#define MATRIX_TILE_H       2  // nombre de matrices disposées horizontalement
-#define MATRIX_TILE_V       2  // nombre de matrices disposées verticalement
+#define MATRIX_TILE_H       3  // nombre de matrices disposées horizontalement
+#define MATRIX_TILE_V       3  // nombre de matrices disposées verticalement
 #define MATRIX_SIZE        ( MATRIX_WIDTH * MATRIX_HEIGHT * MATRIX_TILE_H * MATRIX_TILE_V )
-#define MATRIX_TYPE        ( NEO_MATRIX_ZIGZAG +  NEO_MATRIX_TOP + NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT + NEO_TILE_ZIGZAG + NEO_TILE_BOTTOM + NEO_TILE_LEFT)
+#define MATRIX_TYPE        ( NEO_MATRIX_ZIGZAG + NEO_TILE_ZIGZAG + NEO_MATRIX_LEFT + NEO_MATRIX_BOTTOM )
 // Flag de disposition de la matrice, ajoutez-les au besoin
 //   NEO_MATRIX_TOP, NEO_MATRIX_BOTTOM, NEO_MATRIX_LEFT, NEO_MATRIX_RIGHT:
 //     Position of the FIRST LED in the FIRST MATRIX; pick two, e.g.
@@ -33,7 +33,7 @@ const CRGB whiteColor = CRGB::White;
 const CRGB borderColor = CRGB(255, 255, 255);
 const CRGB tetrisColor1 = CRGB(255, 0, 0);    // Rouge
 const CRGB tetrisColor2 = CRGB(0, 255, 0);    // Vert
-const CRGB tetrisColor3 = CRGB(0, 128, 255);    // Bleu
+const CRGB tetrisColor3 = CRGB(0, 128, 255);  // Bleu
 const CRGB tetrisColor4 = CRGB(255, 255, 0);  // Jaune
 const CRGB tetrisColor5 = CRGB(255, 0, 255);  // Magenta
 const CRGB tetrisColor6 = CRGB(0, 255, 255);  // Cyan
