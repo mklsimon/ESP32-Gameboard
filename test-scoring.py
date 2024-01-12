@@ -1,12 +1,34 @@
-#!/usr/bin/python3
+#!/home/adm-misimon/venv/bin/python
 import time
 import random
 import tkinter as tk
+from tkinter import ttk
 from concurrent.futures import ThreadPoolExecutor
 import copy 
+from functools import lru_cache
 
-datas = [{"coeff_trous": 20, "coeff_poids": 1},
-         ]
+# datas = [{"coeff_trous": 2000, "coeff_poids": 10},{"coeff_trous": 2000, "coeff_poids": 50},{"coeff_trous": 2000, "coeff_poids": 1000},{"coeff_trous": 20, "coeff_poids": 500}]
+# # {"coeff_trous": 500, "coeff_poids": 500},{"coeff_trous": 50, "coeff_poids": 50},{"coeff_trous": 50, "coeff_poids": 10},{"coeff_trous": 10, "coeff_poids": 50}
+# # ]
+
+global_scores =[{"coeff_trous": 0, "coeff_poids": 0, 1: 0, 2: 0, 3: 0, 4: 0, "total_score": 0,"lines":0}]
+
+
+def generate_all_configurations(step=10):
+    configurations = []
+    max_value = 1000  # Adjust this as needed
+
+    for coeff_trous in range(1, max_value + 1, step):
+        for coeff_poids in range(1, max_value + 1, step):
+            config = {
+                "coeff_trous": coeff_trous,
+                "coeff_poids": coeff_poids
+            }
+            configurations.append(config)
+    return configurations
+
+datas = generate_all_configurations(200)
+print(len(datas))
 
 tetris_piece = [
     [[1, 1, 1, 1]],        # I-Piece (Barre)
@@ -24,50 +46,57 @@ class TetrisAI:
         self.configIA = configIA
 
     def evaluate_position(self, board, current_piece):
-        best_score = 0
-        piece = copy.deepcopy(current_piece)  # Create a copy to avoid modifying the original piece
+        best_piece = self.cache_position( board, current_piece)
+        self.shape = best_piece.shape
+        self.X = best_piece.X
+        self.Y = best_piece.Y
+        return self.Y, best_piece.shape
 
+    @lru_cache
+    def cache_position(self, board, current_piece):
+        best_score = 0
+        last_piece = None
+        best_piece = copy.deepcopy(current_piece)
+        piece = TetrisPiece(index=current_piece.index)
         for rotation in range(4):
             piece.rotate_piece()
             for y_pos in range(board.width):
                 for x_pos in range(board.height):                
                     piece.set_position(x_pos, y_pos)
                     if not board.collision(piece, x_pos, y_pos):                        
-                        last_piece = copy.deepcopy(piece)  # Create a copy
-                    else:
+                        last_piece = copy.deepcopy(piece)
                         score = self.get_score(board, last_piece)
                         if score > best_score:
                             best_score = score
-                            best_piece = copy.deepcopy(last_piece)  # Update the best piece
+                            best_piece = last_piece
+                    else:
                         break
+        return copy.deepcopy(best_piece)
 
-        self.shape = best_piece.shape
-        self.X = best_piece.X
-        self.Y = best_piece.Y
-
-        return self.Y, copy.deepcopy(best_piece).shape
-
+    @lru_cache
     def get_score(self, board, piece):
         tmpBoard = board.merge_piece(piece)
-        # print_matrix(tmpBoard.shape)
         score = piece.X
-        # print(score)
-        # weight = 0
-        # holes = 0
-        # for i in range(len(tmpBoard.shape)):
-        #     for j in range(len(tmpBoard.shape[i])):
-        #         if tmpBoard.shape[i][j] != 0:
-        #             weight += i * i 
-        #         else:
-        #             if i > 0 and tmpBoard.shape[i - 1][j] != 0:
-        #                 holes += 1
-        # score += weight * self.configIA['coeff_poids']
-        # score -= holes * self.configIA['coeff_trous']
+        weight = 0
+        holes = 0
+        for i in range(len(tmpBoard.shape)):
+            for j in range(len(tmpBoard.shape[i])):
+                if tmpBoard.shape[i][j] != 0:
+                    weight += i * i 
+                else:
+                    if i > 0 and tmpBoard.shape[i - 1][j] != 0:
+                        holes += 1
+        score += weight * self.configIA['coeff_poids']
+        score -= holes * self.configIA['coeff_trous']
         return score
     
 class TetrisPiece:
-    def __init__(self, pos_x=0, pos_y=4):
-        self.shape = self.get_random_piece()
+    def __init__(self, pos_x=0, pos_y=4, index=None):
+        if index is not None:
+            self.shape = tetris_piece[index]
+            self.index = index
+        else:
+            self.shape, self.index = self.get_random_piece()
         self.width, self.height = self.size_it()
         self.X = pos_x
         self.Y = pos_y
@@ -76,7 +105,8 @@ class TetrisPiece:
         self.X, self.Y = X, Y
 
     def get_random_piece(self):
-        return random.choice(tetris_piece)
+        piece_index = random.randint(0, len(tetris_piece) - 1)
+        return tetris_piece[piece_index], piece_index
     
     def rotate_piece(self):
         self.shape = [list(row) for row in zip(*reversed(self.shape))]
@@ -117,8 +147,10 @@ class Tetris:
         # Init display
         self.window = tk.Tk()
         self.window.title("Tetris")
+        self.loop = 10
 
         # Config display
+        self.configIA = configIA
         self.brick_size = 25
         self.canvas = tk.Canvas(self.window, width=width * self.brick_size, height=height * self.brick_size, bg='black')
         self.canvas.pack()
@@ -136,8 +168,8 @@ class Tetris:
         self.piece = TetrisPiece()
         self.nextPiece = TetrisPiece()
         self.ai = TetrisAI(configIA)
-        self.sleep = 200
-        self.scores = {1: 0, 2: 0, 3: 0, 4: 0, "total_score": 0,"lines":0}
+        self.sleep = 1
+        self.scores = {**{1: 0, 2: 0, 3: 0, 4: 0, "total_score": 0,"lines":0},**configIA}
 
         # Call the game loop
         self.game_loop()
@@ -178,6 +210,7 @@ class Tetris:
             self.nextPiece = TetrisPiece()
             if self.board.collision(self.piece, self.piece.X, self.piece.Y):
                 print("Game Over")
+                global_scores.append(self.scores)
                 return False
         return True
     
@@ -195,9 +228,9 @@ class Tetris:
             self.window.destroy()
             self.window.quit()
             return 
-        tempBoard = self.board.merge_piece(self.ai,3)
-        tempBoard = tempBoard.merge_piece(self.piece,2)
-        self.draw(tempBoard.shape)
+        #tempBoard = self.board.merge_piece(self.piece,2)
+        #tempBoard = tempBoard.merge_piece(self.piece,2)(self.ai,3)
+        #self.draw(self.board.shape)
         self.window.after(self.sleep, self.game_loop)
 
 def print_matrix(matrix):
@@ -212,23 +245,90 @@ def launch(datas):
         results = [Tetris(item).scores for item in datas]
     else:
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            futures = [executor.submit(Tetris(item).game_loop) for item in datas]
-        results = [future.result().scores for future in futures]
+            futures = [executor.submit(run_tetris, item) for item in datas]
+        results = [future.result() for future in futures]
     print(results)
+    window.after(1000, update_scores_table)
+
+def run_tetris(item):
+    tetris_instance = Tetris(item)
+    return tetris_instance.scores
+
+def update_scores_table():
+    # Obtenez toutes les clés uniques des configurations
+    all_keys = set()
+    for scores_data in global_scores:
+        all_keys.update(scores_data.keys())
+
+    # Supprimez le tableau existant s'il y en a un
+    for widget in main_frame.winfo_children():
+        widget.destroy()
+
+    tableau = ttk.Treeview(main_frame)
+    tableau["columns"] = tuple(all_keys)
+    tableau.heading("#0", text="Configuration")
+    tableau.column("#0", anchor="w", width=100)
+
+    for col in tableau["columns"]:
+        tableau.heading(col, text=col, command=lambda c=col: sort_table(tableau, c, c == "total_score"))
+        tableau.column(col, anchor="center", width=100)
+
+    # Insérez les données dans le tableau
+    for idx, scores_data in enumerate(global_scores):
+        config_text = f"Config {idx + 1}"
+        
+        # Vérifiez si un enregistrement pour cette configuration existe déjà
+        existing_item = None
+        for item_id in tableau.get_children():
+            item_text = tableau.item(item_id, "text")
+            if item_text == config_text:
+                existing_item = item_id
+                break
+
+        if existing_item is not None:
+            # Mettez à jour les valeurs existantes
+            values = [scores_data.get(key, 0) for key in all_keys]
+            tableau.item(existing_item, values=tuple(values))
+        else:
+            # Ajoutez un nouvel enregistrement
+            values = [scores_data.get(key, 0) for key in all_keys]
+            tableau.insert("", idx, text=config_text, values=tuple(values))
+
+    # Emballez le tableau dans le frame
+    tableau.pack(expand=True, fill=tk.BOTH)
+
+
+
+def sort_table(tree, col, reverse):
+    # Fonction de tri pour la colonne spécifiée
+    l = [(tree.set(k, col), k) for k in tree.get_children('')]
+    l.sort(reverse=reverse)
+
+    # Tri selon le type de données (numérique ou alphabétique)
+    try:
+        l = [(float(item[0]), item[1]) for item in l]
+    except ValueError:
+        pass
+
+    for index, (val, k) in enumerate(l):
+        tree.move(k, '', index)
+
+    # Inverse la direction pour la prochaine fois.
+    tree.heading(col, command=lambda: sort_table(tree, col, not reverse))
 
 
 if __name__ == "__main__":
     window = tk.Tk()
-    # window.attributes('-zoomed', True)
-    window.attributes('-topmost', True)
-    window.update()
-
     width, height = 2, 2
-
-    # Create a toolbar frame at the top
+    # Create a toolbar frame at the top using grid
     toolbar_frame = tk.Frame(window)
     toolbar_frame.grid(row=0, column=0, columnspan=width, sticky="ew")
     button = tk.Button(toolbar_frame, text="Start process ...", command=lambda: launch(datas))
-    button.pack(side=tk.LEFT, padx=5)
+    button.grid(row=0, column=0, padx=5)
+
+    main_frame = tk.Frame(window)
+    main_frame.grid(row=1, column=0, columnspan=width, sticky="nsew")
+
+    window.after(1000, update_scores_table)
 
     window.mainloop()
